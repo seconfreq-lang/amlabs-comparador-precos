@@ -23,9 +23,20 @@ const upload = multer({ storage: storage });
 const onlyDigits = (s) => String(s ?? '').replace(/\D/g, '');
 
 const normEAN = (s) => {
-  const d = onlyDigits(s);
+  // Preserva o código original como string para manter zeros à esquerda
+  const original = String(s || '').trim();
+  const d = onlyDigits(original);
+  
+  // Se for apenas zeros, retorna null
   if (!d || /^0+$/.test(d)) return null;
-  return [8, 12, 13, 14].includes(d.length) ? d : null;
+  
+  // Verifica se tem tamanho válido para EAN
+  if ([8, 12, 13, 14].includes(d.length)) {
+    // Retorna o código com zeros à esquerda preservados
+    return d.padStart(original.length >= 13 ? 13 : d.length, '0');
+  }
+  
+  return null;
 };
 
 // Função para detectar multiplicador em descrição
@@ -183,7 +194,7 @@ app.post('/api/comparar', upload.fields([{ name: 'xml' }, { name: 'xlsx' }]), as
     
     for (const row of excelData) {
       const precoTabela = parseFloat(row['Preço']) || 0;
-      const eanExcel = onlyDigits(row['Código de barras']);
+      const eanExcel = normEAN(row['Código de barras']); // Usa normEAN para preservar zeros à esquerda
       const codigoExcel = String(row['Código Produto'] || '').trim();
       const nomeExcel = String(row['Descrição Produto'] || '').trim();
       
