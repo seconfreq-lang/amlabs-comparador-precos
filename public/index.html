@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AmLabs - Comparador de Preços XML vs Excel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .upload-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-box {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .upload-box:hover {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+
+        .upload-box.dragover {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+        }
+
+        .upload-box input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            cursor: pointer;
+            display: block;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .upload-text {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e8f5e8;
+            border-radius: 5px;
+            color: #2d5a2d;
+            display: none;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: none;
+        }
+
+        .filters {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .counters {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .counters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .counter-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .counter-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .counter-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-ok { color: #28a745; }
+        .status-abaixo { color: #dc3545; }
+        .status-sem-preco { color: #6c757d; }
+        .status-erro { color: #6f42c1; }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-cell {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .status-OK {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-ABAIXO_MINIMO {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-SEM_PRECO {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
+        .status-ERRO_PARSING {
+            background-color: #e2d9f3;
+            color: #4a154b;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .diagnostico {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .diagnostico h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .diagnostico pre {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 768px) {
+            .upload-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 AmLabs Comparador</h1>
+            <p>Sistema de Comparação de Preços XML (NFe) vs Excel</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-grid">
+                <div class="upload-box" id="xmlUploadBox">
+                    <label for="xmlFile" class="upload-label">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">Clique ou arraste o arquivo XML (NFe)</div>
+                        <small>Formato: .xml</small>
+                    </label>
+                    <input type="file" id="xmlFile" accept=".xml" />
+                    <div class="file-info" id="xmlFileInfo"></div>
+                </div>
+
+                <div class="upload-box" id="excelUploadBox">
+                    <label for="excelFile" class="upload-label">
+                        <div class="upload-icon">📊</div>
+                        <div class="upload-text">Clique ou arraste a planilha Excel</div>
+                        <small>Formato: .xlsx</small>
+                    </label>
+                    <input type="file" id="excelFile" accept=".xlsx" />
+                    <div class="file-info" id="excelFileInfo"></div>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn btn-primary" id="compararBtn" disabled>
+                    🔄 Comparar Arquivos
+                </button>
+                <button class="btn btn-secondary" id="exportarBtn" disabled>
+                    💾 Exportar CSV
+                </button>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="filters">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="statusFilter">Filtrar por Status:</label>
+                        <select id="statusFilter">
+                            <option value="">Todos</option>
+                            <option value="OK">OK</option>
+                            <option value="ABAIXO_MINIMO">Abaixo Mínimo</option>
+                            <option value="SEM_PRECO">Sem Preço</option>
+                            <option value="ERRO_PARSING">Erro Parsing</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="matchTypeFilter">Filtrar por Match:</label>
+                        <select id="matchTypeFilter">
+                            <option value="">Todos</option>
+                            <option value="EAN-Com">EAN-Com</option>
+                            <option value="EAN-Trib">EAN-Trib</option>
+                            <option value="CODIGO">Código</option>
+                            <option value="FUZZY">Fuzzy</option>
+                            <option value="NULL">NULL</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="searchFilter">Buscar por Código/Descrição:</label>
+                        <input type="text" id="searchFilter" placeholder="Digite para buscar..." />
+                    </div>
+                </div>
+            </div>
+
+            <div class="counters" id="counters"></div>
+
+            <div class="table-container">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>EAN XML</th>
+                            <th>EAN XML Trib</th>
+                            <th>EAN Excel</th>
+                            <th>Descrição</th>
+                            <th>Qtd XML</th>
+                            <th>Unid</th>
+                            <th>Preço XML</th>
+                            <th>Preço Tabela</th>
+                            <th>Mínimo (1,5×)</th>
+                            <th>Status</th>
+                            <th>Match Type</th>
+                            <th>Observações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="diagnostico" id="diagnostico"></div>
+        </div>
+    </div>
+
+    <script>
+        let dadosComparacao = [];
+        let dadosFiltrados = [];
+
+        // Formatação de números em pt-BR
+        const formatarMoeda = (valor) => {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(valor || 0);
+        };
+
+        const formatarNumero = (valor) => {
+            return new Intl.NumberFormat('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 4
+            }).format(valor || 0);
+        };
+
+        // Configuração de drag and drop
+        function setupDragAndDrop(boxId, inputId) {
+            const box = document.getElementById(boxId);
+            const input = document.getElementById(inputId);
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                box.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                box.addEventListener(eventName, () => box.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                box.addEventListener(eventName, () => box.classList.remove('dragover'), false);
+            });
+
+            box.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    input.files = files;
+                    handleFileSelect(input);
+                }
+            });
+        }
+
+        // Manipulação de arquivos
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            const infoId = input.id + 'Info';
+            const infoDiv = document.getElementById(infoId);
+
+            if (file) {
+                infoDiv.innerHTML = `
+                    <strong>📁 ${file.name}</strong><br>
+                    <small>Tamanho: ${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                `;
+                infoDiv.style.display = 'block';
+            } else {
+                infoDiv.style.display = 'none';
+            }
+
+            verificarArquivos();
+        }
+
+        function verificarArquivos() {
+            const xmlFile = document.getElementById('xmlFile').files[0];
+            const excelFile = document.getElementById('excelFile').files[0];
+            const compararBtn = document.getElementById('compararBtn');
+
+            compararBtn.disabled = !(xmlFile && excelFile);
+        }
+
+        // Comparação
+        async function compararArquivos() {
+            const xmlFile = document.getElementById('xmlFile').files[0];
+            const excelFile = document.getElementById('excelFile').files[0];
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsBody = document.getElementById('resultsBody');
+
+            if (!xmlFile || !excelFile) {
+                alert('Por favor, selecione ambos os arquivos (XML e Excel)');
+                return;
+            }
+
+            // Mostrar loading
+            resultsSection.style.display = 'block';
+            resultsBody.innerHTML = '<tr><td colspan="13" class="loading">🔄 Processando arquivos...</td></tr>';
+
+            try {
+                const formData = new FormData();
+                formData.append('xml', xmlFile);
+                formData.append('xlsx', excelFile);
+
+                const response = await fetch('/api/comparar', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Erro na comparação');
+                }
+
+                dadosComparacao = await response.json();
+                dadosFiltrados = [...dadosComparacao];
+                
+                renderizarTabela();
+                atualizarContadores();
+                gerarDiagnostico();
+                
+                document.getElementById('exportarBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Erro:', error);
+                resultsBody.innerHTML = `
+                    <tr><td colspan="13" class="error">
+                        ❌ Erro: ${error.message}
+                    </td></tr>
+                `;
+            }
+        }
+
+        // Renderização da tabela
+        function renderizarTabela() {
+            const tbody = document.getElementById('resultsBody');
+            
+            if (dadosFiltrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13" class="loading">Nenhum resultado encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = dadosFiltrados.map(item => `
+                <tr>
+                    <td>${item.codigo}</td>
+                    <td>${item.ean}</td>
+                    <td>${item.eanTrib}</td>
+                    <td>${item.eanExcel}</td>
+                    <td title="${item.descricao}">${item.descricao.length > 50 ? item.descricao.substring(0, 50) + '...' : item.descricao}</td>
+                    <td>${formatarNumero(item.quantidadeXml)}</td>
+                    <td>${item.unidade}</td>
+                    <td>${formatarMoeda(item.precoXML_unit)}</td>
+                    <td>${formatarMoeda(item.precoTabela)}</td>
+                    <td>${formatarMoeda(item.precoMinimo)}</td>
+                    <td><span class="status-cell status-${item.status}">${item.status.replace('_', ' ')}</span></td>
+                    <td>${item.matchType}</td>
+                    <td title="${item.observacoes}">${item.observacoes}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Contadores
+        function atualizarContadores() {
+            const counters = document.getElementById('counters');
+            
+            // Contadores por status
+            const statusCount = {
+                'OK': 0,
+                'ABAIXO_MINIMO': 0,
+                'SEM_PRECO': 0,
+                'ERRO_PARSING': 0
+            };
+
+            // Contadores por matchType
+            const matchCount = {
+                'EAN-Com': 0,
+                'EAN-Trib': 0,
+                'CODIGO': 0,
+                'FUZZY': 0,
+                'NULL': 0
+            };
+
+            dadosFiltrados.forEach(item => {
+                statusCount[item.status] = (statusCount[item.status] || 0) + 1;
+                matchCount[item.matchType] = (matchCount[item.matchType] || 0) + 1;
+            });
+
+            counters.innerHTML = `
+                <div class="counters-grid">
+                    <div class="counter-card">
+                        <div class="counter-value status-ok">${statusCount.OK}</div>
+                        <div class="counter-label">OK</div>
+                    </div>
+                    <div class="counter-card">
+                        <div class="counter-value status-abaixo">${statusCount.ABAIXO_MINIMO}</div>
+                        <div class="counter-label">Abaixo Mínimo</div>
+                    </div>
+                    <div class="counter-card">
+                        <div class="counter-value status-sem-preco">${statusCount.SEM_PRECO}</div>
+                        <div class="counter-label">Sem Preço</div>
+                    </div>
+                    <div class="counter-card">
+                        <div class="counter-value status-erro">${statusCount.ERRO_PARSING}</div>
+                        <div class="counter-label">Erro Parsing</div>
+                    </div>
+                    <div class="counter-card">
+                        <div class="counter-value">${matchCount['EAN-Com']}</div>
+                        <div class="counter-label">EAN-Com</div>
+                    </div>
+                    <div class="counter-card">
+                        <div class="counter-value">${matchCount['EAN-Trib']}</div>
+                        <div class="counter-label">EAN-Trib</div>
+                    </div>
+                    <div class="counter-card">
+                        <div class="counter-value">${matchCount.CODIGO}</div>
+                        <div class="counter-label">Código</div>
+                    </div>
+                    <div class="counter-card">
+                        <div class="counter-value">${matchCount.FUZZY}</div>
+                        <div class="counter-label">Fuzzy</div>
+                    </div>
+                    <div class="counter-card">
+                        <div class="counter-value">${matchCount.NULL}</div>
+                        <div class="counter-label">NULL</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Filtros
+        function aplicarFiltros() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const matchTypeFilter = document.getElementById('matchTypeFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+            dadosFiltrados = dadosComparacao.filter(item => {
+                const matchStatus = !statusFilter || item.status === statusFilter;
+                const matchType = !matchTypeFilter || item.matchType === matchTypeFilter;
+                const matchSearch = !searchFilter || 
+                    item.codigo.toLowerCase().includes(searchFilter) ||
+                    item.descricao.toLowerCase().includes(searchFilter);
+
+                return matchStatus && matchType && matchSearch;
+            });
+
+            renderizarTabela();
+            atualizarContadores();
+        }
+
+        // Diagnóstico
+        function gerarDiagnostico() {
+            const diagnostico = document.getElementById('diagnostico');
+            
+            const comEAN = dadosComparacao.filter(item => item.ean).length;
+            const comEANTrib = dadosComparacao.filter(item => item.eanTrib).length;
+            const semPreco = dadosComparacao.filter(item => item.status === 'SEM_PRECO').slice(0, 10);
+
+            diagnostico.innerHTML = `
+                <h4>📊 Diagnóstico</h4>
+                <pre>{
+  "itens": ${dadosComparacao.length},
+  "comEAN": ${comEAN},
+  "comEANTrib": ${comEANTrib}
+}</pre>
+                
+                <h4>🔍 Primeiros 10 SEM_PRECO</h4>
+                <pre>${JSON.stringify(semPreco.map(item => ({
+                    descricao: item.descricao,
+                    ean: item.ean,
+                    eanTrib: item.eanTrib,
+                    observacoes: item.observacoes
+                })), null, 2)}</pre>
+            `;
+        }
+
+        // Exportar CSV
+        function exportarCSV() {
+            if (dadosFiltrados.length === 0) {
+                alert('Nenhum dado para exportar');
+                return;
+            }
+
+            const headers = [
+                'codigo', 'ean', 'eanTrib', 'eanExcel', 'descricao', 
+                'quantidadeXml', 'unidade', 'precoXML_unit', 'precoTabela', 
+                'precoMinimo', 'status', 'matchType', 'observacoes'
+            ];
+
+            const csvContent = [
+                headers.join(','),
+                ...dadosFiltrados.map(item => 
+                    headers.map(header => {
+                        let value = item[header] || '';
+                        if (typeof value === 'string' && value.includes(',')) {
+                            value = `"${value}"`;
+                        }
+                        return value;
+                    }).join(',')
+                )
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `comparacao_precos_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragAndDrop('xmlUploadBox', 'xmlFile');
+            setupDragAndDrop('excelUploadBox', 'excelFile');
+
+            document.getElementById('xmlFile').addEventListener('change', function() {
+                handleFileSelect(this);
+            });
+
+            document.getElementById('excelFile').addEventListener('change', function() {
+                handleFileSelect(this);
+            });
+
+            document.getElementById('compararBtn').addEventListener('click', compararArquivos);
+            document.getElementById('exportarBtn').addEventListener('click', exportarCSV);
+
+            document.getElementById('statusFilter').addEventListener('change', aplicarFiltros);
+            document.getElementById('matchTypeFilter').addEventListener('change', aplicarFiltros);
+            document.getElementById('searchFilter').addEventListener('input', aplicarFiltros);
+        });
+    </script>
+</body>
+</html>
