@@ -24,9 +24,25 @@ const onlyDigits = (s) => String(s ?? '').replace(/\D/g, '');
 
 const normEAN = (s) => {
   const d = onlyDigits(s);
-  if (!d || /^0+$/.test(d)) return null;
-  return [8, 12, 13, 14].includes(d.length) ? d : null;
+  if (!d || d.length === 0) return null;
+  // Rejeitar se for composto APENAS de zeros
+  if (/^0+$/.test(d)) return null;
+  
+  // Aceitar comprimentos válidos: 8, 11, 12, 13, 14
+  // Para EANs de 11 dígitos, adicionar zeros à esquerda para formar 13 dígitos
+  if (d.length === 11) {
+    return '00' + d;
+  }
+  
+  // Aceitar outros comprimentos válidos
+  if ([8, 12, 13, 14].includes(d.length)) {
+    return d;
+  }
+  
+  return null;
 };
+
+
 
 // Função para detectar multiplicador em descrição
 const detectMultiplicador = (descricao) => {
@@ -240,8 +256,6 @@ app.post('/api/comparar', upload.fields([{ name: 'xml' }, { name: 'xlsx' }]), as
           // Definir observações específicas
           if (!produto.ean && !produto.eanTrib) {
             observacoes = 'EAN XML vazio/SEM GTIN';
-          } else if (!produto.ean && !produto.eanTrib) {
-            observacoes = 'EAN Excel vazio';
           } else {
             observacoes = 'cEAN sem match; cEANTrib sem match';
           }
